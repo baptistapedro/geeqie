@@ -1,0 +1,18 @@
+FROM ubuntu:latest
+RUN apt-get update
+RUN apt install -y build-essential wget git  automake autotools-dev  libtool zlib1g zlib1g-dev libexif-dev  python3 python3-pip python3-dev libssl-dev \
+cmake clang afl libgtk2.0-dev libgtk-3-dev libsqlite3-dev
+RUN git clone https://github.com/BestImageViewer/geeqie.git
+WORKDIR /geeqie
+RUN CC=afl-clang CXX=afl-clang++ ./autogen.sh
+RUN make 
+RUN make install
+RUN mkdir /geeqieCorpus
+RUN wget https://download.samplelib.com/jpeg/sample-clouds-400x300.jpg
+RUN wget https://download.samplelib.com/jpeg/sample-red-400x300.jpg
+RUN wget https://download.samplelib.com/jpeg/sample-green-200x200.jpg
+RUN wget https://download.samplelib.com/jpeg/sample-green-100x75.jpg
+RUN mv *.jpg /geeqieCorpus
+
+ENTRYPOINT ["afl-fuzz", "-i", "/geeqieCorpus", "-o", "/geeqieOut"]
+CMD ["/usr/local/bin/geeqie", "-f", "@@"]
